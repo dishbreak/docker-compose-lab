@@ -1,0 +1,8 @@
+version: '2.1'
+services:
+  webservice:
+    build: ./app
+    ports:
+      - "0:8080"
+
+  
