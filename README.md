@@ -87,10 +87,10 @@ So, using the port and IP address together, I can talk to the service.
 
 
 ```
-$ curl http://$(docker-machine ip):32768/value
+$ curl http://192.168.99.100:32768/value
 {"value": "None"}
 $ curl -X POST http://192.168.99.100:32768/value -H "Content-Type: application/json" -d '{"value": "potato"}'
-$ curl http://$(docker-machine ip):32768/value
+$ curl http://192.168.99.100:32768/value
 {"value": "potato"}
 ```
 
