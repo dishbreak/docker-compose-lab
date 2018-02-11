@@ -94,11 +94,51 @@ $ curl http://192.168.99.100:32768/value
 {"value": "potato"}
 ```
 
+We've proven what we need to, so go ahead and tear down the Docker compose environment. Hit `CTRL + C` to exit.
+
 Alright! Let's complicate our lives a little bit! Move on to the next tag.
 
 ```
-git checkout 2-adding-redis-container
+$ git checkout 2-adding-redis-container
 ```
 
+## Part 2: Debugging Failed Containers
 
+Let's relaunch the environment, using the detached mode (`-d` flag). 
+
+```
+$ docker compose up -d
+Creating network "dockercomposelab_default" with the default driver
+Creating dockercomposelab_webservice_1 ...
+Creating dockercomposelab_webservice_1 ... done
+```
+
+But there's an issue. Let's try and find the running containers.
+
+```
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+```
+
+Huh. It looks like our container already died. We can ask `docker ps` to show us stopped containers.
+
+```
+$ docker ps --filter status=exited
+CONTAINER ID        IMAGE                         COMMAND             CREATED             STATUS                     PORTS               NAMES
+5d85bafe5fde        dockercomposelab_webservice   "python app.py"     6 minutes ago       Exited (1) 6 minutes ago                       dockercomposelab_webservice_1
+```
+
+Now, we can fetch the logs for that container.
+
+```
+$ docker logs 5d85bafe5fde
+Traceback (most recent call last):
+  File "app.py", line 29, in <module>
+    redis_url = os.environ["REDIS_URL"]
+  File "/usr/local/lib/python2.7/UserDict.py", line 40, in __getitem__
+    raise KeyError(key)
+KeyError: 'REDIS_URL'
+```
+
+Ah. So we need to set up a 
 
