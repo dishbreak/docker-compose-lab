@@ -94,7 +94,7 @@ $ curl http://192.168.99.100:32768/value
 {"value": "potato"}
 ```
 
-We've proven what we need to, so go ahead and tear down the Docker compose environment. Hit `CTRL + C` to exit.
+We've proven what we need to, so go ahead and tear down the Docker Compose environment. Hit `CTRL + C` to exit.
 
 Alright! Let's complicate our lives a little bit! Move on to the next tag.
 
@@ -104,10 +104,10 @@ $ git checkout 2-adding-redis-container
 
 ## Part 2: Debugging Failed Containers
 
-Let's relaunch the environment, using the detached mode (`-d` flag). 
+Let's relaunch the environment, using the detached mode (`-d` flag). We're using detatched mode to simulate the way a lot of automated systems will interact with Docker.
 
 ```
-$ docker compose up -d
+$ Docker Compose up -d
 Creating network "dockercomposelab_default" with the default driver
 Creating dockercomposelab_webservice_1 ...
 Creating dockercomposelab_webservice_1 ... done
@@ -147,7 +147,7 @@ We're going to need to do the following:
 
 ### Adding the Redis Container
 
-We're going to visit [Docker Hub](hub.docker.com) to look for a Redis container. Once we find it, we'll add the following to our Docker compose file:
+We're going to visit [Docker Hub](hub.docker.com) to look for a Redis container. Once we find it, we'll add the following to our Docker Compose file:
 
 ```
   redis:
@@ -191,3 +191,110 @@ $ scripts/get_value.sh
 {"value": "turtle"}
 ```
 
+Now that you've gotten this working, it's time to move to the next tag. Make sure to tear down the Docker Compose environment and discard your changes to your Docker Compose file first.
+
+```
+$ docker-compose down
+$ git checkout HEAD -- .
+$ git checkout 3-added-redis-container
+```
+
+## Part 4: Playing with Docker Networks
+
+You'll notice that there's something strange about our configuration. 
+
+```
+    environment:
+      - "REDIS_URL=redis"
+```
+
+We're basically setting the hostname to `redis`. How does this work? According to the [Docker documentation](https://docs.docker.com/compose/networking/), it has to do with Docker networks.
+
+> By default Compose sets up a single network for your app. Each container for a service joins the default network and is both reachable by other containers on that network, and discoverable by them at a hostname identical to the container name.
+
+We can test this by relaunching the Compose system, and then using `docker network ls` to find our networks.
+
+```
+$ docker-compose up -d
+$ docker network ls
+~/src/docker-compose-lab (master) $ docker network ls
+NETWORK ID          NAME                       DRIVER              SCOPE
+c263db97f633        dockercomposelab_default   bridge              local
+```
+
+Aha! We can also use `docker ps` to find the individual containers.
+
+```
+$ docker ps
+CONTAINER ID        IMAGE                         COMMAND                  CREATED             STATUS              PORTS                     NAMES
+3e7693ab5a51        dockercomposelab_webservice   "python app.py"          3 hours ago         Up 3 hours          0.0.0.0:32780->8080/tcp   dockercomposelab_webservice_1
+0a6ab7ac9fe1        redis:3.2                     "docker-entrypoint..."   3 hours ago         Up 3 hours          0.0.0.0:32779->6379/tcp   dockercomposelab_redis_1
+```
+
+Once we find it, we can launch a bash shell inside our webservice container, then ping redis. 
+
+```
+$ docker exec -it dockercomposelab_webservice_1 bash
+root@3e7693ab5a51:/usr/src/app# ping redis
+64 bytes from 172.18.0.2: icmp_seq=0 ttl=64 time=0.074 ms
+64 bytes from 172.18.0.2: icmp_seq=1 ttl=64 time=0.111 ms
+64 bytes from 172.18.0.2: icmp_seq=2 ttl=64 time=0.088 ms
+64 bytes from 172.18.0.2: icmp_seq=3 ttl=64 time=0.088 ms
+```
+
+Cool. Docker networks make it really easy to connect across containers. 
+
+As an exercise, add a second Redis container to your Docker Compose, with a different name. Bring the system down and back up, and prove that you're able to ping the newly created container.
+
+When you're done, tear down the Docker Compose environment, reset your files, and move on to the next tag.
+
+```
+$ docker-compose down
+$ git checkout HEAD -- .
+$ git checkout 4-broken-port-config
+```
+
+## Part 5: Networks and Ports, Oh My!
+
+That tag name can't bode well, can it? Ok, let's see what's broken!
+
+```
+$ docker-compose up -d
+Recreating dockercomposelab_redis_1 ...
+dockercomposelab_webservice_1 is up-to-date
+Recreating dockercomposelab_redis_1
+Creating dockercomposelab_otherredis_1 ...
+Recreating dockercomposelab_redis_1 ... error
+
+ERROR: for dockercomposelab_redis_1  Cannot start service redis: driver failed programming external connectivity on endpoint dockercomposelab_redis_1 (0a1cbd7d1b4572cc8e6685a6670cddc897be3464821374b8b544ff792767192c): Bind for 0.0.0.0:6379 failed: port is already allocated
+
+ERROR: for redis  Cannot start service redis: driver failed programming external connectivity on endpoint dockercomposelab_redis_1 (0a1cbd7d1b4572cc8e6685a6670cddc897be3464821374b8b544ff792767192c): Bind for 0.0.0.0:6379 failed: port is already allocated
+ERROR: Encountered errors while bringing up the project.
+```
+
+Yowch. It looks like we have some port conflict issues. Looking at our new Docker Compose file, we can see the issue pretty clearly.
+
+```
+version: '2.1'
+services:
+  webservice:
+    build: ./app
+    ports:
+      - "0:8080"
+    environment:
+      - "REDIS_URL=redis"
+
+  redis:
+    image: redis:3.2
+    ports:
+      - "6379:6379"
+
+  otherredis:
+    image: redis:3.2
+    ports:
+      - "6379:6379"
+```
+
+For added context, we've got [this documentation](https://docs.docker.com/compose/compose-file/#ports) avaliable from docker. Essentially, the problem is that we're binding two containers to the same port on the host (6379). To fix this immediate issue, you can change at least one or the other to use a different port on the host. However, all is not quite well yet.
+
+To demonstrate the issue, first tear down and start up the Docker Compose environment, then launch a _second_ Docker Compose 
