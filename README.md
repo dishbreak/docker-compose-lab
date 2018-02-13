@@ -107,7 +107,8 @@ $ git checkout 2-adding-redis-container
 Let's relaunch the environment, using the detached mode (`-d` flag). We're using detatched mode to simulate the way a lot of automated systems will interact with Docker.
 
 ```
-$ Docker Compose up -d
+$ docker-compose build
+$ docker-compose up -d
 Creating network "dockercomposelab_default" with the default driver
 Creating dockercomposelab_webservice_1 ...
 Creating dockercomposelab_webservice_1 ... done
