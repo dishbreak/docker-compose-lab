@@ -196,7 +196,7 @@ Now that you've gotten this working, it's time to move to the next tag. Make sur
 
 ```
 $ docker-compose down
-$ git checkout HEAD -- .
+$ git checkout -- .
 $ git checkout 3-added-redis-container
 ```
 
@@ -251,7 +251,7 @@ When you're done, tear down the Docker Compose environment, reset your files, an
 
 ```
 $ docker-compose down
-$ git checkout HEAD -- .
+$ git checkout -- .
 $ git checkout 4-broken-port-config
 ```
 
