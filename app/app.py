@@ -34,5 +34,5 @@ if __name__ == '__main__':
         print("Expected REDIS_URL to be set. Exiting.")
         sys.exit(1)
 
-    r = redis.StrictRedis(host=redis_url, port=6739, db=0)
+    r = redis.StrictRedis(host=redis_url, port=6379, db=0)
     app.run(host="0.0.0.0")
