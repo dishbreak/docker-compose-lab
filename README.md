@@ -132,13 +132,62 @@ Now, we can fetch the logs for that container.
 
 ```
 $ docker logs 5d85bafe5fde
-Traceback (most recent call last):
-  File "app.py", line 29, in <module>
-    redis_url = os.environ["REDIS_URL"]
-  File "/usr/local/lib/python2.7/UserDict.py", line 40, in __getitem__
-    raise KeyError(key)
-KeyError: 'REDIS_URL'
+Expected REDIS_URL to be set. Exiting.
 ```
 
-Ah. So we need to set up a 
+Ah. So we need to set up a Redis server.
+
+
+## Part 3: Adding a Redis Server
+
+We're going to need to do the following:
+
+* Add the Redis container to our Docker Compose
+* Configure the application to connect to the Redis container.
+
+### Adding the Redis Container
+
+We're going to visit [Docker Hub](hub.docker.com) to look for a Redis container. Once we find it, we'll add the following to our Docker compose file:
+
+```
+  redis:
+    image: redis:3.2
+    ports:
+      - "0:6379"
+```
+
+This will let us launch a Redis server along with our environment.
+
+### Adding Configuration Bits
+
+Docker based applications try to pull as much configuration as possible from the environment.
+
+```
+        redis_url = os.environ["REDIS_URL"]
+```
+
+So, if we set the environment for the Docker container to point to the new redis container, all will be set.
+
+```
+  webservice:
+    build: ./app
+    ports:
+      - "0:8080"
+    environment:
+      - "REDIS_URL=redis"
+```
+
+### Testing Your Changes
+
+You may have noticed there's now a `scripts/` directory. In it are two scripts, `get_value.sh` and `set_value.sh`. Take a minute to look at them and convince yourself of what they do. Then, use the scripts to interact with the service.
+
+```
+$ scripts/get_value.sh
+{"value": "None"}
+
+$ scripts/set_value.sh turtle
+
+$ scripts/get_value.sh
+{"value": "turtle"}
+```
 
