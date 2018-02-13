@@ -297,4 +297,15 @@ services:
 
 For added context, we've got [this documentation](https://docs.docker.com/compose/compose-file/#ports) avaliable from docker. Essentially, the problem is that we're binding two containers to the same port on the host (6379). To fix this immediate issue, you can change at least one or the other to use a different port on the host. However, all is not quite well yet.
 
-To demonstrate the issue, first tear down and start up the Docker Compose environment, then launch a _second_ Docker Compose 
+To demonstrate the issue, first tear down and start up the Docker Compose environment, then launch a _second_ Docker Compose instance using a different project name with the `-p` flag.
+
+```
+$ docker-compose up -d
+$ docker-compose -p otherproj up -d
+```
+
+The second Compose will fail with an identical error, because ports it needs are already in use. This is an important lesson: when you bind to a fixed port in a Docker Compose file, any other Compose system that attempts to use the same port will fail. Whenever possible, use `0:` to get a randomly assigned port on the host system. As we've shown, it's easy enough to use `docker-compose port` to find the ports you need. 
+
+## Conclusion
+
+That's about it for this lab. Thanks for playing along!
